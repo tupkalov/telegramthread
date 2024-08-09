@@ -1,0 +1,17 @@
+{
+  "name": "telegramthread",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0",
+    "objectid": "^3.2.1",
+    "telegramify-markdown": "^1.2.2"
+  }
+}
