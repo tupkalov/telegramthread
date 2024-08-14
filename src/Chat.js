@@ -1,3 +1,6 @@
+import telegramifyMarkdown from 'telegramify-markdown'
+import { callbackStore } from './Callbacks.js';
+
 export default class Chat {
     constructor(chat, { bot }) {
         this.data = chat;
@@ -54,6 +57,57 @@ export default class Chat {
 
     stopTyping() {
         this._stopTyping?.();
+    }
+
+    processSendOptions(options = {}) {
+        const sendOptions = {};
+        if (options.inlineKeyboard) {
+            sendOptions.reply_markup = {
+                inline_keyboard: options.inlineKeyboard.map(row => row.map(({ text, action }) => {
+                    return {
+                        text,
+                        callback_data: callbackStore.setCallback(action)
+                    }
+                }))
+            };
+        }
+        return sendOptions
+    }
+
+    
+
+    async sendPhoto(fileId, options = {}) {
+        const sendOptions = {};
+        if (options.caption) {
+            sendOptions.caption = telegramifyMarkdown(caption || '', 'escape');
+            sendOptions.parse_mode = 'MarkdownV2';
+        }
+
+        Object.assign(sendOptions, this.processSendOptions(options));
+
+        return await this.bot.instance.sendPhoto(this.id, fileId, sendOptions);
+    }
+
+    async sendText(text, options) {
+        const sendOptions = {
+            parse_mode: 'MarkdownV2',
+            ...this.processSendOptions(options)
+        };
+
+        if (!text) throw new Error("Text is required");
+
+        return await this.bot.instance.sendMessage(this.id, telegramifyMarkdown(text, 'escape'), sendOptions);
+    }
+
+    async editTextMessage(messageId, text, sendOptions) {
+        if (!text) throw new Error("Text is required");
+
+        return await this.bot.instance.editMessageText(telegramifyMarkdown(text, 'escape'), {
+            chat_id: this.id,
+            message_id: messageId,
+            parse_mode: 'MarkdownV2',
+            ...this.processSendOptions(sendOptions)
+        });
     }
 }
 

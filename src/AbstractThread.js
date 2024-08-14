@@ -54,7 +54,7 @@ export default class AbstractThread {
             this.stop();
         }).catch(error => {
             console.error(error);
-            this.lastMessage?.reply("An error occurred " + error.message);
+            this.lastMessage?.reply("An error occurred " + error.message).catch(() => {});
         }).finally(() => {
             this.chat.stopTyping()
         });
@@ -86,5 +86,9 @@ export default class AbstractThread {
     run() {
         this.process(this.startMessage);
         return this;
+    }
+
+    sendMessage(text, options) {
+        return this.message.reply(text, options);
     }
 }

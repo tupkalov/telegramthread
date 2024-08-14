@@ -9,17 +9,22 @@ export default class Callbacks {
         const id = ObjectId();
         this.callbacks[id] = async () => {
             try {
-                await callback();
+                const res = await callback();
                 delete this.callbacks[id];
+                return res;
             } catch (error) {
                 console.error("Error in callback " + id, error);
+
+                if (error.clientMessage) {
+                    return error.message;
+                }
             }
         }
         return id.toString();
     }
 
     executeCallback(id) {
-        this.callbacks[id]?.();
+        return this.callbacks[id]?.();
     }
 }
 

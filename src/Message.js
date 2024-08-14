@@ -1,10 +1,11 @@
-import telegramifyMarkdown from 'telegramify-markdown'
 import Chat from './Chat.js';
-import { callbackStore } from './Callbacks.js';
 
 export default class Message {
-    constructor(msg, { bot }) {
+    constructor(msg, { bot, text, photo }) {
         this.data = msg;
+        if (text) this.setText(text);
+        else if (photo) this.setPhoto();
+        
         this.bot = bot;
         this.chat = Chat.getByMessage(this);
     }
@@ -13,8 +14,31 @@ export default class Message {
         this.data = msg;
     }
     
-    createMessage(text) {
-        return new this.constructor({ ...this.data, text }, { bot: this.bot });
+    static createFrom(from, options) {
+        if (from instanceof Message) {
+            return new this({ ...from.data }, { bot: from.bot, ...options });
+        }
+        throw new Error('Unsupported from type');
+    }
+    
+    static createInChat(chat, options) {
+        const data = { chat: chat.data, text: options.text };
+        return new this(data, { bot: chat.bot, ...options });
+    }
+
+    setText(text) {
+        this.data.text = text;
+    }
+
+    setPhoto() {
+        this.data.photo = this.data.photo.map(photo => {
+            photo.file_id = photo.file_id;
+            return photo;
+        });
+    }
+
+    get id() {
+        return this.data.message_id;
     }
 
     get text() {
@@ -37,67 +61,37 @@ export default class Message {
         return [...this.data.photo].pop();
     }
 
-    _processOptionsInlineKeyboard(options) {
-        if (options?.inlineKeyboard) {
-            return { reply_markup: {
-                inline_keyboard: this._inlineKeyboard = options.inlineKeyboard.map(row => row.map(({ text, action }) => {
-                    return {
-                        text,
-                        callback_data: callbackStore.setCallback(action)
-                    }
-                }))
-            }};
-        } else if (this._inlineKeyboard) {
-            return { reply_markup: {
-                inline_keyboard: this._inlineKeyboard
-            }};
-        }
-    }
 
     async reply(data, options) {
         if (typeof data === 'string') {
-            const text = telegramifyMarkdown(data, 'escape');
-            const message = this.createMessage(text);
-            const sendOptions = { 
-                parse_mode: 'MarkdownV2',
-                ...message._processOptionsInlineKeyboard(options)
-            };
+            const newData = await this.chat.sendText(data, options);
 
-            const newData = await this.bot.instance.sendMessage(message.chat.id, message.text, sendOptions);
-            message.updateData(newData);
-            return message;
+            return new this.constructor(newData, { bot: this.bot });
         }
         throw new Error('Unsupported data type');
     }
 
-    async edit(text, options) {
-        const data = await this.bot.instance.editMessageText(telegramifyMarkdown(text, 'escape'), {
-            chat_id: this.data.chat.id,
-            message_id: this.data.message_id,
-            parse_mode: 'MarkdownV2',
-            ...this._processOptionsInlineKeyboard(options)
-        });
+    async editText(text, sendOptions) {
+        const data = await this.chat.editTextMessage(this.id, text || this.data.text, {
+            inlineKeyboard: this.inlineKeyboard,
+            ...sendOptions 
+        })
 
         this.updateData(data);
         return this;
     }
 
     async updateInlineKeyboard(inlineKeyboard) {
-        const sendOptions = { 
-            parse_mode: 'MarkdownV2',
-            ...this._processOptionsInlineKeyboard({ inlineKeyboard })
-        };
-
-        await this.edit(this.text, sendOptions);
+        this.inlineKeyboard = inlineKeyboard;
+        return await this.editText(this.text, { inlineKeyboard });
     }
 
     async replyPhoto(fileId, { caption } = {}) {
-        const _caption = telegramifyMarkdown(caption || '', 'escape');
         if (caption && _caption.length > 1024) {
-            await this.bot.instance.sendPhoto(this.data.chat.id, fileId);
+            await this.chat.sendPhoto(fileId);
             await this.reply(caption);
         } else {
-            await this.bot.instance.sendPhoto(this.data.chat.id, fileId, { caption: telegramifyMarkdown(caption || '', 'escape'), parse_mode: 'MarkdownV2' });
+            await this.chat.sendPhoto(fileId, { caption });
         }
     }
 

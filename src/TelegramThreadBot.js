@@ -14,12 +14,23 @@ export default class Bot {
     constructor () {
         bot.on("callback_query", async (query) => {
             try {
-                await callbackStore.executeCallback(query.data);
-                bot.answerCallbackQuery(query.id);
+                const text = await callbackStore.executeCallback(query.data);
+                if (text) {
+                    bot.answerCallbackQuery(query.id, { text });
+                } else {
+                    bot.answerCallbackQuery(query.id);
+                }
             } catch (error) {
                 console.error(`An error occurred on callbackQuery ${query.data}`, error);
                 bot.sendMessage(query.message.chat.id, `An error occurred on callbackQuery ${query.data} ${error.message}`);
             }
+        });
+
+        bot.on("polling_error", (error) => {
+            if (error.message.includes("ETELEGRAM: 502 Bad Gateway")) {
+                return console.error("Telegram API is down");
+            }
+            console.error(error);
         });
     }
 
