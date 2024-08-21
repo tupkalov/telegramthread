@@ -7,7 +7,7 @@ export default class Message {
         
         this.bot = bot;
         this.chat = chat || Chat.getByMessage(this);
-        
+
         if (newMessageInChat) {
             this.chat.setLastUserMessage(this);
         }
@@ -58,9 +58,5 @@ export default class Message {
 
         this.data = data;
         return this;
-    }
-
-    startThread(Thread, ...args) {
-        return this.chat.startThread(Thread, this, ...args);
     }
 }

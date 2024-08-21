@@ -31,7 +31,7 @@ export default class Chat {
         this.thread?.stop()
         const threadOptions = {};
         
-        if (!(Thread instanceof AbstractThread)) {
+        if (!(Thread.prototype instanceof AbstractThread)) {
             threadOptions.processing = Thread;
             Thread = AbstractThread;
         }
