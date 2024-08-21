@@ -2,7 +2,7 @@
   "name": "telegramthread",
   "version": "0.1.1",
   "description": "",
-  "main": "./index.js",
+  "main": "./cjs/index.js",
   "module": "src/index.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -11,15 +11,10 @@
   },
   "exports": {
     ".": {
-      "require": "./index.js",
+      "require": "./cjs/index.js",
       "import": "./src/index.mjs"
     }
   },
-  "files": [
-    "cjs",
-    "index.js",
-    "src"
-  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

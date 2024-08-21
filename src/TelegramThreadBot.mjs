@@ -9,8 +9,11 @@ export default class Bot {
         if (!token) {
             throw new Error("TelegramThreadBot: token is required");
         }
+        this.token = token;
+    }
 
-        this.instance = new TelegramBot(token, {polling: true});
+    start() {
+        this.instance = new TelegramBot(this.token, {polling: true});
         
         this.instance.on("callback_query", async (query) => {
             try {
@@ -34,9 +37,9 @@ export default class Bot {
     onMessage(callback) {
         this.instance.on("message", async (msg) => {
             try {
-                const message = new Message(msg, { bot: this });
+                const message = new Message(msg, { bot: this, newMessageInChat: true });
                 const oldThread = message.chat.thread;
-                await callback(message)
+                await callback(message, message.chat);
 
                 // Не обработано
                 if (message.chat.thread && oldThread === message.chat.thread) {

@@ -1,12 +1,16 @@
 import Chat from './Chat.mjs';
 
 export default class Message {
-    constructor(msg, { chat, bot, text }) {
+    constructor(msg, { chat, bot, text, newMessageInChat }) {
         this.data = msg;
         if (text) this.setText(text);
         
         this.bot = bot;
         this.chat = chat || Chat.getByMessage(this);
+        
+        if (newMessageInChat) {
+            this.chat.setLastUserMessage(this);
+        }
     }
 
     setText(text) {
@@ -35,6 +39,15 @@ export default class Message {
 
     getLastPhoto() {
         return [...this.data.photo].pop();
+    }
+
+    getFileId(index) {
+        if (!this.isPhoto()) throw new Error("Message is not a photo");
+
+        if (index !== undefined) {
+            return this.data.photo[index].file_id;
+        } else
+            return this.getLastPhoto().file_id;
     }
 
     async editText(text, sendOptions) {

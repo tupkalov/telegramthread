@@ -1,8 +1,11 @@
 export default class AbstractThread {
-    constructor(chat) {
+    constructor(chat, { processing }) {
         if (!chat) throw new Error("Chat is required");
-        
         this.chat = chat;
+        
+        if (processing) {
+            this.processing = processing;
+        }
     }
 
     get message() {
@@ -37,7 +40,7 @@ export default class AbstractThread {
     }
 
     process(message, ...args) {
-        if (this._waitingMessage) return this._waitingMessage(this.lastMessage = message);
+        if (this._waitingMessage) return this._waitingMessage(this.lastMessage = message, ...args);
         if (this._proccessing) return; // Игнорируем сообщение если его не ждем
 
         if (!this.lastMessage) {
@@ -46,7 +49,7 @@ export default class AbstractThread {
         this.chat.startTyping();
 
         // Начинаем процесс
-        return this._proccessing = this.processing(message, (options) => {
+        return this._proccessing = this.processing(this.chat, this.startMessage, (options) => {
             if (this.stopped) throw this.stopError();
             return this.getNextMessage(options)
         }, ...args).catch(error => {
@@ -67,7 +70,12 @@ export default class AbstractThread {
             throw this.stopError();
 
         } else {
-            const { resolve, reject, promise } = Promise.withResolvers();
+            var resolve, reject;
+            const promise = new Promise((res, rej) => {
+                resolve = res;
+                reject = rej;
+            });
+            
             this._stop = () => reject(this.stopError());
             this.chat.stopTyping();
             if (options) {
@@ -83,10 +91,5 @@ export default class AbstractThread {
             }
             return promise;
         }
-    }
-
-    run() {
-        this.process(this.startMessage);
-        return this;
     }
 }
