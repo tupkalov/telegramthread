@@ -1,5 +1,0 @@
-export { default } from './TelegramThreadBot.js'
-export { default as AbstractThread } from './AbstractThread.js'
-export { default as Message } from './Message.js'
-export { default as MessageError } from './MessageError.js'
-export * as utils from '../utils/index.js'

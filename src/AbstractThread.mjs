@@ -1,5 +1,7 @@
 export default class AbstractThread {
     constructor(chat) {
+        if (!chat) throw new Error("Chat is required");
+        
         this.chat = chat;
     }
 
@@ -34,7 +36,7 @@ export default class AbstractThread {
         return this._waitingOptions?.image;
     }
 
-    process(message) {
+    process(message, ...args) {
         if (this._waitingMessage) return this._waitingMessage(this.lastMessage = message);
         if (this._proccessing) return; // Игнорируем сообщение если его не ждем
 
@@ -44,17 +46,17 @@ export default class AbstractThread {
         this.chat.startTyping();
 
         // Начинаем процесс
-        this._proccessing = this.processing(message, (options) => {
+        return this._proccessing = this.processing(message, (options) => {
             if (this.stopped) throw this.stopError();
             return this.getNextMessage(options)
-        }).catch(error => {
+        }, ...args).catch(error => {
             if (error.message === "Thread stopped") return;
             throw error;
         }).then(() => {
             this.stop();
         }).catch(error => {
             console.error(error);
-            this.lastMessage?.reply("An error occurred " + error.message).catch(() => {});
+            this.chat.sendText("An error occurred " + error.message).catch(() => {});
         }).finally(() => {
             this.chat.stopTyping()
         });
@@ -86,9 +88,5 @@ export default class AbstractThread {
     run() {
         this.process(this.startMessage);
         return this;
-    }
-
-    sendMessage(text, options) {
-        return this.message.reply(text, options);
     }
 }

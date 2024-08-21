@@ -1,5 +1,5 @@
 import telegramifyMarkdown from 'telegramify-markdown'
-import { callbackStore } from './Callbacks.js';
+import { callbackStore } from './Callbacks.mjs';
 
 export default class Chat {
     constructor(chat, { bot }) {
@@ -26,12 +26,10 @@ export default class Chat {
         return this.chats[chatId];
     }
 
-    startThread(Thread, startMessage) {
+    startThread(Thread, startMessage, ...args) {
         this.thread?.stop()
         this.thread = new Thread(this);
-        this.thread.process(startMessage);
-
-        return this.thread;
+        return this.thread.process(startMessage, ...args);
     }
 
     stopThread() {
@@ -107,6 +105,13 @@ export default class Chat {
             message_id: messageId,
             parse_mode: 'MarkdownV2',
             ...this.processSendOptions(sendOptions)
+        });
+    }
+
+    async sendMediaGroup(media, options = {}) {
+        return await this.bot.instance.sendMediaGroup(this.id, media, {
+            parse_mode: 'MarkdownV2',
+            ...this.processSendOptions(options)
         });
     }
 }
