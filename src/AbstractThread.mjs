@@ -9,6 +9,10 @@ export default class AbstractThread {
     }
 
     get message() {
+        if (!this.lastMessage) {
+            this.lastMessage = this.chat.lastUserMessage;
+        }
+
         return new Proxy(this.lastMessage, {
             get: (target, prop) => {
                 if (typeof target[prop] === "function") {
@@ -39,20 +43,19 @@ export default class AbstractThread {
         return this._waitingOptions?.image;
     }
 
-    process(message, ...args) {
-        if (this._waitingMessage) return this._waitingMessage(this.lastMessage = message, ...args);
+    process(...args) {
+        if (this._waitingMessage) return this._waitingMessage(this.lastMessage = args[0]);
         if (this._proccessing) return; // Игнорируем сообщение если его не ждем
 
-        if (!this.lastMessage) {
-            this.lastMessage = this.startMessage = message;
-        }
         this.chat.startTyping();
 
         // Начинаем процесс
-        return this._proccessing = this.processing(this.chat, this.startMessage, (options) => {
+        const nextMessage = (options) => {
             if (this.stopped) throw this.stopError();
             return this.getNextMessage(options)
-        }, ...args).catch(error => {
+        };
+
+        return this._proccessing = this.processing(...args, nextMessage).catch(error => {
             if (error.message === "Thread stopped") return;
             throw error;
         }).then(() => {

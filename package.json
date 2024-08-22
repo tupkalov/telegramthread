@@ -1,9 +1,13 @@
 {
   "name": "telegramthread",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "",
   "main": "./cjs/index.js",
   "module": "src/index.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tupkalov/telegramthread.git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublishOnly": "npm run build",

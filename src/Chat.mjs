@@ -36,7 +36,8 @@ export default class Chat {
             Thread = AbstractThread;
         }
         this.thread = new Thread(this, threadOptions);
-        return this.thread.process(this.lastUserMessage, ...args);
+
+        return this.thread.process(...args);
     }
 
     setLastUserMessage(message) {
