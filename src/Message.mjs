@@ -21,6 +21,11 @@ export default class Message {
         return this.data.message_id;
     }
 
+    get caption () {
+        if (!this.isPhoto()) throw new Error("Message is not a photo");
+        return this.data.caption;
+    }
+
     get text() {
         return this.data.text;
     }

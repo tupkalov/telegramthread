@@ -47,7 +47,11 @@ export default class Bot {
                 }
 
             } catch (error) {
-                console.error(error);
+                if (error.name === "TelegramError") {
+                    console.error("TelegramError: " + error.message, error.response.body);
+                } else {
+                    console.error(error);
+                }
                 this.instance.sendMessage(msg.chat.id, "An error occurred " + error.message);
             }
         });

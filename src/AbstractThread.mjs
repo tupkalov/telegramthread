@@ -27,8 +27,8 @@ export default class AbstractThread {
         return this.chat.bot;
     }
 
-    stop() {
-        this._stop?.();
+    stop(error) {
+        this._stop?.(error);
         this.stopped = true;
         if (this.chat.thread === this) {
             delete this.chat.thread;
@@ -64,7 +64,7 @@ export default class AbstractThread {
             console.error(error);
             this.chat.sendText("An error occurred " + error.message).catch(() => {});
         }).finally(() => {
-            this.chat.stopTyping()
+            this.chat.stopTyping();
         });
     }
 
@@ -79,7 +79,7 @@ export default class AbstractThread {
                 reject = rej;
             });
             
-            this._stop = () => reject(this.stopError());
+            this._stop = error => reject(error || this.stopError());
             this.chat.stopTyping();
             if (options) {
                 this._waitingOptions = options;
