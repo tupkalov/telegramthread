@@ -3,13 +3,20 @@ import { callbackStore } from './Callbacks.mjs';
 import AbstractThread from './AbstractThread.mjs';
 
 export default class Chat {
-    constructor(chat, { bot }) {
-        this.data = chat;
-        this.bot = bot;
+    constructor(data) {
+        this.data = data;
     }
 
     get id() {
         return this.data.id;
+    }
+
+    get bot() {
+        return global._telegramthread_bot;
+    }
+
+    get Message() {
+        return this.bot.Message;
     }
 
     is (id) {
@@ -21,8 +28,10 @@ export default class Chat {
             this.chats = {};
         }
         const chatId = message.data.chat.id;
+        if (!chatId) throw new Error("Chat id is required");
+
         if (!this.chats[chatId]) {
-            this.chats[chatId] = new Chat(message.data.chat, { bot: message.bot });
+            this.chats[chatId] = new this(message.data.chat);
         }
         return this.chats[chatId];
     }
@@ -73,14 +82,21 @@ export default class Chat {
         const sendOptions = {};
         if (options.inlineKeyboard) {
             sendOptions.reply_markup = {
-                inline_keyboard: options.inlineKeyboard.map(row => row.map(({ text, action }) => {
+                inline_keyboard: options.inlineKeyboard.map(row => row.map(({ text, action, callbackKey }) => {
                     return {
                         text,
-                        callback_data: callbackStore.setCallback(action)
+                        callback_data: action ? callbackStore.setCallback(action) : callbackKey ?? (() => { throw new Error("Action or callbackKey is required") })()
                     }
                 }))
             };
         }
+
+        if (options.replyTo) {
+            sendOptions.reply_parameters = {
+                message_id: options.replyTo.id
+            }
+        }
+            
         return sendOptions
     }
 
@@ -95,18 +111,47 @@ export default class Chat {
 
         Object.assign(sendOptions, this.processSendOptions(options));
 
-        return await this.bot.instance.sendPhoto(this.id, fileId, sendOptions);
+        const tgMessage = await this.bot.instance.sendPhoto(this.id, fileId, sendOptions);
+        if (options?.extend) Object.assign(tgMessage, options.extend);
+        return new this.Message(tgMessage, { newMessageInChat: true });
     }
 
     async sendText(text, options) {
-        const sendOptions = {
+        let sendOptions = {
             parse_mode: 'MarkdownV2',
             ...this.processSendOptions(options)
         };
 
         if (!text) throw new Error("Text is required");
 
-        return await this.bot.instance.sendMessage(this.id, telegramifyMarkdown(text, 'escape'), sendOptions);
+        if (options?.split) {
+            const messages = text.match(/[\s\S]{1,4096}/g);
+            const results = [];
+            for (const message of messages) {
+                const formattedMessage = telegramifyMarkdown(message, 'escape');
+                let sentMessage;
+                try {
+                    sentMessage = await this._sendText(formattedMessage, sendOptions, options);
+                } catch (error) {
+                    if (error.message.includes("an't parse entities: Can't find end")) {
+                        sentMessage = await this._sendText(formattedMessage, { ...sendOptions, parse_mode: null }, options);
+                    } else
+                        throw error
+                }
+                
+                sendOptions = { ...sendOptions, ...this.processSendOptions({ replyTo: sentMessage }) };
+                results.push(sentMessage);
+            }
+            return results;
+        }
+
+        return await this._sendText(telegramifyMarkdown(text, 'escape'), sendOptions, options);
+    }
+
+    async _sendText(text, sendOptions, options) {
+        const tgMessage = await this.bot.instance.sendMessage(this.id, text, sendOptions);
+        if (options?.extend) Object.assign(tgMessage, options.extend);
+        return new this.Message(tgMessage, { newMessageInChat: true });
     }
 
     async editTextMessage(messageId, text, sendOptions) {
@@ -125,6 +170,15 @@ export default class Chat {
             parse_mode: 'MarkdownV2',
             ...this.processSendOptions(options)
         });
+    }
+
+    // Логирование ошибки в консоль и в ответ юзеру
+    catchError(error) {
+        this.bot.catchError(error, this.id);
+    }
+
+    toJSON() {
+        return { ...this.data};
     }
 }
 

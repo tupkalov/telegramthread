@@ -1,5 +1,9 @@
-export default class AbstractThread {
+import { EventEmitter } from 'node:events';
+
+export default class AbstractThread extends EventEmitter {
     constructor(chat, { processing }) {
+        super();
+        
         if (!chat) throw new Error("Chat is required");
         this.chat = chat;
         
@@ -28,11 +32,14 @@ export default class AbstractThread {
     }
 
     stop(error) {
+        if (this.stopped) return;
+
         this._stop?.(error);
         this.stopped = true;
         if (this.chat.thread === this) {
             delete this.chat.thread;
         }
+        this.emit("stop", error);
     }
 
     stopError() {
@@ -61,8 +68,7 @@ export default class AbstractThread {
         }).then(() => {
             this.stop();
         }).catch(error => {
-            console.error(error);
-            this.chat.sendText("An error occurred " + error.message).catch(() => {});
+            this.chat.catchError(error);
         }).finally(() => {
             this.chat.stopTyping();
         });

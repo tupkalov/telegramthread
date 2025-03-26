@@ -23,6 +23,10 @@ export default class Callbacks {
         return id.toString();
     }
 
+    isExists(id) {
+        return !!this.callbacks[id];
+    }
+
     executeCallback(id) {
         return this.callbacks[id]?.();
     }

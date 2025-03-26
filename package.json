@@ -1,6 +1,6 @@
 {
   "name": "telegramthread",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "",
   "main": "./cjs/index.js",
   "module": "src/index.mjs",
@@ -22,9 +22,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "babel-plugin-transform-require-extensions": "^2.0.1",
     "node-telegram-bot-api": "^0.66.0",
     "objectid": "^3.2.1",
-    "telegramify-markdown": "^1.2.2"
+    "telegramify-markdown": "^1.2.4"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.8",
