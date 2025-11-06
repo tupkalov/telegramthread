@@ -1,0 +1,7 @@
+{
+  "require": "test/setup.mjs",
+  "spec": "test/**/*.test.mjs",
+  "timeout": 5000,
+  "ui": "bdd",
+  "exit": true
+}
