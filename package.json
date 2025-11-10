@@ -1,7 +1,7 @@
 {
   "name": "telegramthread",
-  "version": "0.1.7",
-  "description": "",
+  "version": "0.1.9",
+  "description": "A lightweight library for building Telegram bots with thread-based conversation handling",
   "main": "./cjs/index.js",
   "module": "src/index.mjs",
   "repository": {

@@ -71,6 +71,17 @@ export default class Bot extends EventEmitter {
         });
     }
 
+    async stop() {
+        if (this.instance) {
+            try {
+                await this.instance.stopPolling();
+                console.log('✅ Polling остановлен');
+            } catch (error) {
+                console.error('⚠️ Ошибка при остановке polling:', error.message);
+            }
+        }
+    }
+
     onMessage(callback) {
         const handler = async (msg) => {
             const message = new this.Message(msg, { newMessageInChat: true });
